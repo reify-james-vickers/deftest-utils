@@ -2,7 +2,7 @@
   (:require [clojure.test :refer [is testing]]
             [deftest-utils.core :refer [deftest-2]]))
 
-(deftest-2 {:timeout {:millis 500}} test-timeout-setup
+(deftest-2 {:timeout {:timeout-ms 500}} test-timeout-setup
   (testing "hi"
     (Thread/sleep 10000)))
 

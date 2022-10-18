@@ -5,9 +5,9 @@
 
 (s/def ::pos-int (s/and int? pos?))
 
-(s/def ::millis ::pos-int)
+(s/def ::timeout-ms ::pos-int)
 (s/def ::timeout
-  (s/keys :req-un [::millis]))
+  (s/keys :req-un [::timeout-ms]))
 
 (s/def ::max-retries ::pos-int)
 (s/def ::retry-on symbol?)
@@ -25,15 +25,15 @@
   (let [test-body# (-> body rest first) ; remove test name var
         retry-with-defaults (when retry (merge {:max-retries 3} retry))
         decorated-body# (cond->> test-body#
-                          timeout (list 'diehard.core/with-timeout (clojure.set/rename-keys timeout {:millis :timeout-ms}))
+                          timeout (list 'diehard.core/with-timeout timeout)
                           retry-with-defaults (list 'diehard.core/with-retry retry-with-defaults))]
     `(clojure.test/deftest ~(first body) ; var name of test
        (try ; wrap in try-catch to give better test output on failure, don't need diehard stack trace.
          ~decorated-body#
          (catch dev.failsafe.TimeoutExceededException e#
-           (clojure.test/is false (clojure.core/format "Test timed out after %s ms" ~(:millis timeout))))))))
+           (clojure.test/is false (clojure.core/format "Test timed out after %s ms" ~(:timeout-ms timeout))))))))
 
 (comment
-  (macroexpand-1 '(deftest-2 {:timeout {:millis 5} :retry {:retry-on Exception :max-retries 3}}
+  (macroexpand-1 '(deftest-2 {:timeout {:timeout-ms 5} :retry {:retry-on Exception :max-retries 3}}
                     some-test (let [x 5] (println x) (do (+ x 5)))))
   (macroexpand '(deftest-2 {:timeout-ms 5} some-test (let [x 5]))))
