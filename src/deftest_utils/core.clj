@@ -19,6 +19,12 @@
                    ::timeout]))
 
 (defmacro deftest-2
+  "deftest with support for test retry and timeout.
+   The first argument is a map configuring retry and/or timeout, remaining arguments are test body
+   starting with the test var name, e.g. (deftest-2 {:timeout {:timeout-ms 5000}} test-name (let [])...).
+   The values for :retry and :timeout in that map are exactly what diehard
+   takes for with-retry and with-timeout respectively, except that max-retries
+   defaults to 3 instead of infinite."
   [{:keys [retry timeout] :as config} & body]
   (when-let [info (s/explain-data ::deftest-timed-config config)]
     (throw (Exception. (str info))))
