@@ -25,16 +25,12 @@ Spec for the config map:
 
 ```clojure
 (s/def ::pos-int (s/and int? pos?))
-
 (s/def ::timeout-ms ::pos-int)
 (s/def ::timeout
   (s/keys :req-un [::timeout-ms]))
-
 (s/def ::max-retries ::pos-int)
-(s/def ::retry-on symbol?)
 (s/def ::retry
-  (s/keys :opt-un [::max-retries
-                   ::retry-on]))
+  (s/keys :opt-un [::max-retries]))
 (s/def ::deftest-timed-config
   (s/keys :opt-un [::retry
                    ::timeout]))
