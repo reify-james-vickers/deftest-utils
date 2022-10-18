@@ -15,3 +15,8 @@
         (println (str "failing on try " @tries))
         (throw (IllegalArgumentException. (str "failing on try " @tries))))
       (is true))))
+
+(def test-config {:timeout {:timeout-ms 1}}) ; :retry {:retry-on Exception :max-retries 3}})
+
+(deftest-configured test-config test-with-config-var
+  (Thread/sleep 100))
