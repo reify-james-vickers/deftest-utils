@@ -21,6 +21,16 @@ Example:
     (Thread/sleep 10000)))
 ```
 
+A var can also be used to share test config across a whole suite:
+
+```clojure
+(def test-config {:timeout {:timeout-ms 1} :retry {:retry-on Exception :max-retries 3}}})
+
+(deftest-configured test-config a-test ...)
+
+(deftest-configured test-config another-test ...)
+```
+
 Spec for the config map:
 
 ```clojure
