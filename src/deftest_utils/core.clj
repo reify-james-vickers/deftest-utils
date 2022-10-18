@@ -28,8 +28,9 @@
     (throw (Exception. (str info))))
   (let [test-body# (-> body rest first) ; remove test name var
         retry-with-defaults (when retry (merge {:max-retries 3} retry))
+        timeout-with-defaults (when timeout (merge {:interrupt? true} timeout))
         decorated-body# (cond->> test-body#
-                          timeout (list 'diehard.core/with-timeout timeout)
+                          timeout-with-defaults (list 'diehard.core/with-timeout timeout-with-defaults)
                           retry-with-defaults (list 'diehard.core/with-retry retry-with-defaults))]
     `(clojure.test/deftest ~(first body) ; var name of test
        (try ; wrap in try-catch to give better test output on failure, don't need diehard stack trace.
@@ -38,6 +39,6 @@
            (clojure.test/is false (clojure.core/format "Test timed out after %s ms" ~(:timeout-ms timeout))))))))
 
 (comment
-  (macroexpand-1 '(deftest-2 {:timeout {:timeout-ms 5} :retry {:retry-on Exception :max-retries 3}}
+  (macroexpand-1 '(deftest-configured {:timeout {:timeout-ms 5} :retry {:retry-on Exception :max-retries 3}}
                     some-test (let [x 5] (println x) (do (+ x 5)))))
-  (macroexpand '(deftest-2 {:timeout-ms 5} some-test (let [x 5]))))
+  (macroexpand '(deftest-configured {:timeout-ms 5} some-test (let [x 5]))))
