@@ -23,21 +23,25 @@
    The values for :retry and :timeout in that map are exactly what diehard
    takes for with-retry and with-timeout respectively, except that max-retries
    defaults to 3 instead of infinite."
-  [{:keys [retry timeout] :as config} & body]
-  (when-let [info (s/explain-data ::deftest-timed-config config)]
-    (throw (Exception. (str info))))
-  (let [test-body# (-> body rest first) ; remove test name var
+  [config & [test-name body]]
+  (let [resolved (if (symbol? config) (resolve config) config)
+        config (if (var? resolved) (var-get resolved) resolved)
+        _ (when-let [info (s/explain-data ::deftest-timed-config config)]
+            (throw (Exception. (str info))))
+        {:keys [retry timeout]} config
         retry-with-defaults (when retry (merge {:max-retries 3} retry))
-        decorated-body# (cond->> test-body#
+        decorated-body# (cond->> body
                           timeout (list 'diehard.core/with-timeout timeout)
                           retry-with-defaults (list 'diehard.core/with-retry retry-with-defaults))]
-    `(clojure.test/deftest ~(first body) ; var name of test
+    `(clojure.test/deftest ~test-name
        (try ; wrap in try-catch to give better test output on failure, don't need diehard stack trace.
          ~decorated-body#
          (catch dev.failsafe.TimeoutExceededException e#
            (clojure.test/is false (clojure.core/format "Test timed out after %s ms" ~(:timeout-ms timeout))))))))
 
 (comment
-  (macroexpand-1 '(deftest-2 {:timeout {:timeout-ms 5} :retry {:retry-on Exception :max-retries 3}}
+  (def cfg {:timeout {:timeout-ms 5} :retry {:retry-on Exception :max-retries 3}})
+  (macroexpand-1 '(deftest-configured cfg some-test (let [x 5] (println x) (do (+ x 5)))))
+  (macroexpand-1 '(deftest-configured {:timeout {:timeout-ms 5} :retry {:retry-on Exception :max-retries 3}}
                     some-test (let [x 5] (println x) (do (+ x 5)))))
-  (macroexpand '(deftest-2 {:timeout-ms 5} some-test (let [x 5]))))
+  (macroexpand '(deftest-configured {:timeout-ms 5} some-test (let [x 5]))))
