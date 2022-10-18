@@ -30,8 +30,9 @@
             (throw (Exception. (str info))))
         {:keys [retry timeout]} config
         retry-with-defaults (when retry (merge {:max-retries 3} retry))
+        timeout-with-defaults (when timeout (merge {:interrupt? true} timeout))
         decorated-body# (cond->> body
-                          timeout (list 'diehard.core/with-timeout timeout)
+                          timeout-with-defaults (list 'diehard.core/with-timeout timeout-with-defaults)
                           retry-with-defaults (list 'diehard.core/with-retry retry-with-defaults))]
     `(clojure.test/deftest ~test-name
        (try ; wrap in try-catch to give better test output on failure, don't need diehard stack trace.
