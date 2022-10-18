@@ -19,13 +19,14 @@
                    ::timeout]))
 
 (defmacro deftest-2
-  [{:keys [retry timeout] :as config} & body] ; TODO diehard default retries is infinite (?), should probably default to like 3 here.
+  [{:keys [retry timeout] :as config} & body]
   (when-let [info (s/explain-data ::deftest-timed-config config)]
     (throw (Exception. (str info))))
   (let [test-body# (-> body rest first) ; remove test name var
+        retry-with-defaults (when retry (merge {:max-retries 3} retry))
         decorated-body# (cond->> test-body#
                           timeout (list 'diehard.core/with-timeout (clojure.set/rename-keys timeout {:millis :timeout-ms}))
-                          retry (list 'diehard.core/with-retry retry))]
+                          retry-with-defaults (list 'diehard.core/with-retry retry-with-defaults))]
     `(clojure.test/deftest ~(first body) ; var name of test
        (try ; wrap in try-catch to give better test output on failure, don't need diehard stack trace.
          ~decorated-body#
